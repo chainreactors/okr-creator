@@ -1,6 +1,6 @@
 # okr
 
-### AI-powered OKR Creator — 给你的项目定方向，用 PUA 话术逼你执行
+## AI-powered OKR Creator — 给你的项目定方向，用 PUA 话术逼你执行
 
 > A [PUA](https://github.com/tanweai/pua)-like project — 基于 PUA skill 的理念和话术体系，专注于项目目标管理。PUA 让 AI 不敢摆烂，OKR 让 AI 知道往哪卷。
 
