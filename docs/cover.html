@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    width: 900px;
+    height: 500px;
+    background: linear-gradient(135deg, #0d1117 0%, #161b22 40%, #1a1e2e 100%);
+    font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
+    color: #e6edf3;
+    display: flex;
+    overflow: hidden;
+    position: relative;
+  }
+
+  /* grid background */
+  body::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(48,54,61,0.3) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(48,54,61,0.3) 1px, transparent 1px);
+    background-size: 40px 40px;
+  }
+
+  /* accent glow */
+  .glow {
+    position: absolute;
+    width: 300px;
+    height: 300px;
+    border-radius: 50%;
+    filter: blur(100px);
+    opacity: 0.15;
+  }
+  .glow-1 { background: #58a6ff; top: -80px; right: -60px; }
+  .glow-2 { background: #f78166; bottom: -100px; left: -80px; }
+
+  .left {
+    flex: 1;
+    padding: 50px 40px 50px 50px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    position: relative;
+    z-index: 1;
+  }
+
+  .tag {
+    display: inline-block;
+    background: rgba(56,139,253,0.15);
+    border: 1px solid rgba(56,139,253,0.4);
+    color: #58a6ff;
+    font-size: 13px;
+    padding: 4px 12px;
+    border-radius: 20px;
+    margin-bottom: 20px;
+    width: fit-content;
+    letter-spacing: 1px;
+  }
+
+  h1 {
+    font-size: 38px;
+    font-weight: 800;
+    line-height: 1.25;
+    margin-bottom: 16px;
+    background: linear-gradient(135deg, #e6edf3, #8b949e);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .subtitle {
+    font-size: 16px;
+    color: #8b949e;
+    line-height: 1.6;
+    margin-bottom: 28px;
+  }
+
+  .badges {
+    display: flex;
+    gap: 10px;
+  }
+  .badge {
+    font-size: 12px;
+    padding: 5px 14px;
+    border-radius: 6px;
+    border: 1px solid #30363d;
+    background: rgba(22,27,34,0.8);
+    color: #8b949e;
+  }
+
+  .right {
+    width: 320px;
+    padding: 40px 40px 40px 20px;
+    display: flex;
+    align-items: center;
+    position: relative;
+    z-index: 1;
+  }
+
+  .card {
+    background: rgba(22,27,34,0.9);
+    border: 1px solid #30363d;
+    border-radius: 12px;
+    padding: 24px;
+    width: 100%;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+  }
+
+  .card-title {
+    font-size: 11px;
+    color: #58a6ff;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    margin-bottom: 16px;
+  }
+
+  .kr-row {
+    display: flex;
+    align-items: center;
+    margin-bottom: 10px;
+    font-size: 13px;
+  }
+  .kr-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    margin-right: 10px;
+    flex-shrink: 0;
+  }
+  .kr-dot.green { background: #3fb950; box-shadow: 0 0 6px #3fb950; }
+  .kr-dot.red { background: #f85149; box-shadow: 0 0 6px #f85149; }
+  .kr-dot.yellow { background: #d29922; box-shadow: 0 0 6px #d29922; }
+
+  .kr-label { flex: 1; color: #c9d1d9; }
+  .kr-pct { color: #8b949e; font-size: 12px; margin-left: 8px; }
+
+  .pua-quote {
+    margin-top: 16px;
+    padding: 12px;
+    background: rgba(248,129,102,0.08);
+    border-left: 3px solid #f78166;
+    border-radius: 0 6px 6px 0;
+    font-size: 11px;
+    color: #f78166;
+    line-height: 1.5;
+    font-style: italic;
+  }
+
+  .bottom-bar {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, #58a6ff, #3fb950, #d29922, #f85149);
+  }
+</style>
+</head>
+<body>
+  <div class="glow glow-1"></div>
+  <div class="glow glow-2"></div>
+
+  <div class="left">
+    <div class="tag">AI Agent Skill</div>
+    <h1>你的 AI 连目标<br>都没有，怎么<br>给你干活？</h1>
+    <div class="subtitle">OKR Creator — 六维诊断 / 量化目标 / 每日追踪 / PUA 点评</div>
+    <div class="badges">
+      <span class="badge">Claude Code</span>
+      <span class="badge">Codex CLI</span>
+      <span class="badge">CodeBuddy</span>
+    </div>
+  </div>
+
+  <div class="right">
+    <div class="card">
+      <div class="card-title">OKR Daily Review</div>
+      <div class="kr-row">
+        <div class="kr-dot green"></div>
+        <span class="kr-label">OKR skill 格式合规</span>
+        <span class="kr-pct">100%</span>
+      </div>
+      <div class="kr-row">
+        <div class="kr-dot green"></div>
+        <span class="kr-label">Review Action 运行</span>
+        <span class="kr-pct">100%</span>
+      </div>
+      <div class="kr-row">
+        <div class="kr-dot green"></div>
+        <span class="kr-label">Issue 评估评论</span>
+        <span class="kr-pct">100%</span>
+      </div>
+      <div class="kr-row">
+        <div class="kr-dot red"></div>
+        <span class="kr-label">E2E 自动化</span>
+        <span class="kr-pct">0%</span>
+      </div>
+      <div class="kr-row">
+        <div class="kr-dot red"></div>
+        <span class="kr-label">SKILL.md 行数 &le;400</span>
+        <span class="kr-pct">0%</span>
+      </div>
+      <div class="kr-row">
+        <div class="kr-dot yellow"></div>
+        <span class="kr-label">Markdown lint</span>
+        <span class="kr-pct">50%</span>
+      </div>
+      <div class="pua-quote">"E2E 是 0%，模板还是 700 行巨石——你是想让别人贡献还是知难而退？"</div>
+    </div>
+  </div>
+
+  <div class="bottom-bar"></div>
+</body>
+</html>
