@@ -77,10 +77,10 @@ It's not "set and forget." Every day, an AI reviews your OKRs line by line — g
 
 ## What Does It Look Like?
 
-Type `/okr` in any project, and the entire flow runs automatically:
+Type `/okr:create` in any project, and the entire flow runs automatically:
 
 ```
-         /okr triggered
+         /okr:create triggered
               |
     +--------------------+
     |  Read project files | README, config, git log, TODO
@@ -110,7 +110,7 @@ Here's the hardest part.
 
 **OKR Creator is using its own OKRs to manage its own development.**
 
-We ran `/okr` on the okr-creator project itself. It diagnosed itself across six dimensions:
+We ran `/okr:create` on the okr-creator project itself. It diagnosed itself across six dimensions:
 
 | Dimension | Score | Key Finding |
 |-----------|-------|-------------|
@@ -166,7 +166,7 @@ OKR Creator works for any project with a directory structure and deliverables:
 | Product | Feature completion, user feedback, bug count |
 | Operations | KPI achievement rate, automation coverage |
 
-As long as your project has a README and directory structure, `/okr` can figure out where it should go.
+As long as your project has a README and directory structure, `/okr:create` can figure out where it should go.
 
 ---
 
@@ -212,4 +212,4 @@ The design principles behind this tool — and behind good project management:
 
 ---
 
-Does your project have direction? Try `/okr`.
+Does your project have direction? Try `/okr:create`.

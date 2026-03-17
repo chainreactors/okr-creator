@@ -1,6 +1,6 @@
 ---
 name: okr-creator
-description: "为任何项目生成定制化 OKR skill。自动分析项目内容、文档、结构、历史，在目标项目的 .claude/skills/okr/ 下生成可直接加载的 SKILL.md。不限于代码项目——写作、研究、运营、产品、设计等任何有目录结构的项目都适用。触发条件：(1) 用户输入 /okr; (2) 用户说'制定目标'、'定个 OKR'、'这个项目接下来做什么'、'给这个项目定个方向'; (3) 用户要求规划项目方向。"
+description: "为任何项目生成定制化 OKR skill。自动分析项目内容、文档、结构、历史，在目标项目的 .claude/skills/okr/ 下生成可直接加载的 SKILL.md。不限于代码项目——写作、研究、运营、产品、设计等任何有目录结构的项目都适用。触发条件：(1) 用户输入 /okr:create; (2) 用户说'制定目标'、'定个 OKR'、'这个项目接下来做什么'、'给这个项目定个方向'; (3) 用户要求规划项目方向。"
 license: MIT
 ---
 
@@ -179,7 +179,7 @@ license: MIT
 
 > 本文件由 okr-creator skill 自动生成，基于对项目的全面分析和与项目负责人的对齐。
 > 生成时间：{日期}
-> 建议每季度重新运行 /okr 更新。
+> 建议每季度重新运行 /okr:create 更新。
 
 ## 项目概况
 
@@ -706,6 +706,6 @@ Step 7 会自动部署以下 Action 到目标项目：
 
 ## 搭配使用
 
-- `pua:pua` — OKR Creator 定方向，PUA 保执行力。先 /okr 制定目标，再靠 PUA 确保不摆烂
+- `pua:pua` — OKR Creator 定方向，PUA 保执行力。先 /okr:create 制定目标，再靠 PUA 确保不摆烂
 - `pua:high-agency` — OKR 提供外部目标框架，high-agency 提供内在驱动力。战略 + 动力 = 不可阻挡
 - **GitHub Action 每日评估** — 定了 OKR 不追踪？Action 每天追着你，不给你摸鱼的机会

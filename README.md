@@ -32,7 +32,7 @@
 ```bash
 # 方式一：通过 marketplace 安装
 claude plugin marketplace add chainreactors/okr-creator
-claude plugin install okr-creator@okr-creator
+claude plugin install okr-creator@okr
 
 # 方式二：手动安装
 git clone https://github.com/chainreactors/okr-creator.git ~/.claude/plugins/okr
@@ -56,7 +56,7 @@ curl -o ~/.codex/prompts/okr.md \
 ```bash
 # 方式一：通过 marketplace 安装
 codebuddy plugin marketplace add chainreactors/okr-creator
-codebuddy plugin install okr-creator@okr-creator
+codebuddy plugin install okr-creator@okr
 
 # 方式二：手动安装
 mkdir -p ~/.codebuddy/skills/okr-creator
@@ -66,7 +66,7 @@ curl -o ~/.codebuddy/skills/okr-creator/SKILL.md \
 
 ## 使用
 
-在任何项目中输入 `/okr`，skill 会自动完成全部流程：
+在任何项目中输入 `/okr:create`，skill 会自动完成全部流程：
 
 | Step | 动作 | 说明 |
 |------|------|------|
@@ -83,7 +83,7 @@ curl -o ~/.codebuddy/skills/okr-creator/SKILL.md \
 在 CI/CD 或批量场景中，可以跳过用户交互：
 
 ```
-使用 /okr 并加上 --auto 参数，不要与人类确认，直接执行
+使用 /okr:create 并加上 --auto 参数，不要与人类确认，直接执行
 ```
 
 AI 会基于诊断数据自主判断方向并生成 OKR，标注 `[Auto-generated]`。
@@ -92,7 +92,7 @@ AI 会基于诊断数据自主判断方向并生成 OKR，标注 `[Auto-generate
 
 ```
 ┌─────────────────────────────────────────────────────┐
-│                    /okr 触发                         │
+│                    /okr:create 触发                         │
 └──────────┬──────────────────────────────────────────┘
            ▼
 ┌──────────────────┐     ┌──────────────────┐
@@ -146,7 +146,7 @@ AI 会基于诊断数据自主判断方向并生成 OKR，标注 `[Auto-generate
 
 OKR Creator 正在用自己生成的 OKR 来驱动自身的迭代改进——这就是**自举（bootstrapping）**。
 
-我们对 okr-creator 自身运行了 `/okr`，完成了六维诊断，生成了 5 个 Objectives / 14 个 Key Results，并部署了每日自动评估 Action。现在，每天 UTC 02:00，Claude 会自动检查 okr-creator 自身的 OKR 完成进度，逐条运行 Harness 验收，并在 Issue 中追加评估报告。Maintainer 可以直接在 Issue 中 `@claude` 讨论进度和调整方向。
+我们对 okr-creator 自身运行了 `/okr:create`，完成了六维诊断，生成了 5 个 Objectives / 14 个 Key Results，并部署了每日自动评估 Action。现在，每天 UTC 02:00，Claude 会自动检查 okr-creator 自身的 OKR 完成进度，逐条运行 Harness 验收，并在 Issue 中追加评估报告。Maintainer 可以直接在 Issue 中 `@claude` 讨论进度和调整方向。
 
 **自举闭环验证结果：**
 
@@ -213,7 +213,7 @@ OKR Creator 对自身运行 `/okr`，完成全链路闭环（详见上方 [Dogfo
 
 ## GitHub Action
 
-`/okr` 运行后自动部署以下文件到目标项目：
+`/okr:create` 运行后自动部署以下文件到目标项目：
 
 ```
 .github/
@@ -303,7 +303,7 @@ claude plugin marketplace add tanweai/pua
 ```
 chainreactors/okr-creator/
 ├── skills/okr-creator/SKILL.md    # 核心 skill（含 Action 模板）
-├── commands/okr.md                # /okr slash 命令
+├── commands/create.md             # /okr:create slash 命令
 ├── .claude/skills/okr/SKILL.md    # 自举：本项目自身的 OKR（dogfooding）
 ├── .claude-plugin/                # Claude Code marketplace 配置
 ├── .codebuddy-plugin/             # CodeBuddy marketplace 配置

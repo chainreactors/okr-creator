@@ -1,5 +1,5 @@
 {
-    "name": "okr-creator",
+    "name": "okr",
     "description": "OKR Creator for Claude Code -- analyzes any project and generates customized OKR skill with PUA rhetoric, daily GitHub Action review, and issue-based chat",
     "owner": {
         "name": "chainreactors, M09ic",
