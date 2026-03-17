@@ -83,45 +83,55 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          set -e
           TODAY=$(date -u +%Y-%m-%d)
           AGENT="${OKR_AGENT}"
-
-          QUARTER=$(date -u +%Y-Q)$(( ($(date -u +%-m) - 1) / 3 + 1 ))
+          MONTH=$(date -u +%-m)
+          QUARTER="$(date -u +%Y)-Q$(( (MONTH - 1) / 3 + 1 ))"
           ISSUE_TITLE="[OKR Review] ${QUARTER} 进度追踪"
 
           EXISTING_ISSUE=$(gh issue list --label "okr-review" --state open --json number,title \
             --jq ".[] | select(.title == \"${ISSUE_TITLE}\") | .number" 2>/dev/null || echo "")
 
           # Build comment body via file concatenation to avoid shell expansion issues
-          printf '## OKR 每日评估 — %s\n\n' "$TODAY" > /tmp/okr-comment-body.md
-          printf '> Agent: `%s` | [Workflow Run](%s/%s/actions/runs/%s)\n\n' \
-            "$AGENT" "$GITHUB_SERVER_URL" "$GITHUB_REPOSITORY" "$GITHUB_RUN_ID" >> /tmp/okr-comment-body.md
-          if [ -f /tmp/okr-review-output.txt ] && [ -s /tmp/okr-review-output.txt ]; then
-            cat /tmp/okr-review-output.txt >> /tmp/okr-comment-body.md
-          else
-            echo "Agent produced no output." >> /tmp/okr-comment-body.md
-          fi
-          printf '\n\n---\n\n**想继续讨论？** 直接在下方评论，使用 `@claude` 或 `@codex` 开头即可触发 AI 回复。\n' >> /tmp/okr-comment-body.md
+          {
+            echo "## OKR 每日评估 — ${TODAY}"
+            echo ""
+            echo "> Agent: \`${AGENT}\` | [Workflow Run](${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID})"
+            echo ""
+            if [ -f /tmp/okr-review-output.txt ] && [ -s /tmp/okr-review-output.txt ]; then
+              cat /tmp/okr-review-output.txt
+            else
+              echo "Agent produced no output."
+            fi
+            echo ""
+            echo "---"
+            echo ""
+            echo "**想继续讨论？** 直接在下方评论，使用 \`@claude\` 或 \`@codex\` 开头即可触发 AI 回复。"
+          } > /tmp/okr-comment-body.md
 
           if [ -n "$EXISTING_ISSUE" ]; then
             gh issue comment "$EXISTING_ISSUE" --body-file /tmp/okr-comment-body.md
           else
-            printf '# %s\n\n' "$ISSUE_TITLE" > /tmp/okr-issue-body.md
-            printf '本 Issue 自动追踪本季度 OKR 完成进度。\n\n' >> /tmp/okr-issue-body.md
-            printf -- '- 📂 OKR 文件: `.claude/skills/okr/SKILL.md`\n' >> /tmp/okr-issue-body.md
-            printf -- '- ⚙️ Agent: `%s`\n' "$AGENT" >> /tmp/okr-issue-body.md
-            printf -- '- 🔄 自动评估: 每日 UTC 02:00\n' >> /tmp/okr-issue-body.md
-            printf -- '- 💬 对话: 评论中 `@claude` 或 `@codex` 开头即可触发 AI 回复\n\n---\n' >> /tmp/okr-issue-body.md
+            {
+              echo "# ${ISSUE_TITLE}"
+              echo ""
+              echo "本 Issue 自动追踪本季度 OKR 完成进度。"
+              echo ""
+              echo "- OKR 文件: \`.claude/skills/okr/SKILL.md\`"
+              echo "- Agent: \`${AGENT}\`"
+              echo "- 自动评估: 每日 UTC 02:00"
+              echo "- 对话: 评论中 \`@claude\` 或 \`@codex\` 开头即可触发 AI 回复"
+              echo ""
+              echo "---"
+            } > /tmp/okr-issue-body.md
 
             NEW_ISSUE=$(gh issue create \
               --title "$ISSUE_TITLE" \
               --body-file /tmp/okr-issue-body.md \
-              --label "okr-review" \
-              --assignee "${GITHUB_REPOSITORY_OWNER}" 2>&1)
+              --label "okr-review" 2>&1) || true
 
             ISSUE_NUM=$(echo "$NEW_ISSUE" | grep -oE '[0-9]+$' || echo "")
             if [ -n "$ISSUE_NUM" ]; then
-              gh issue comment "$ISSUE_NUM" --body-file /tmp/okr-comment-body.md
+              gh issue comment "$ISSUE_NUM" --body-file /tmp/okr-comment-body.md || true
             fi
           fi
