@@ -1,0 +1,46 @@
+name: Lint
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  markdown-lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Lint Markdown
+        uses: DavidAnson/markdownlint-cli2-action@v19
+        with:
+          globs: '**/*.md'
+          config: '.markdownlint.json'
+
+  frontmatter-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate SKILL.md frontmatter
+        run: |
+          STATUS=0
+          for f in $(find skills -name 'SKILL.md'); do
+            echo "Checking $f ..."
+            # 检查 frontmatter 存在
+            if ! head -1 "$f" | grep -q '^---'; then
+              echo "ERROR: $f missing YAML frontmatter"
+              STATUS=1
+              continue
+            fi
+            # 提取 frontmatter 并检查必要字段
+            FRONT=$(sed -n '1,/^---$/p' "$f" | tail -n +2 | head -n -1)
+            for field in name description license; do
+              if ! echo "$FRONT" | grep -q "^${field}:"; then
+                echo "ERROR: $f missing required field: $field"
+                STATUS=1
+              fi
+            done
+          done
+          exit $STATUS

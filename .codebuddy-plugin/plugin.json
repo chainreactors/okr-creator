@@ -1,0 +1,23 @@
+{
+    "name": "okr",
+    "version": "1.0.0",
+    "description": "OKR Creator -- analyzes any project and generates customized OKR skill. Six-dimension diagnosis, PUA-style user intent elicitation, harness-driven KRs, daily GitHub Action review with issue-based chat.",
+    "author": {
+        "name": "chainreactors, M09ic",
+        "url": "https://github.com/chainreactors"
+    },
+    "homepage": "https://github.com/chainreactors/okr-creator",
+    "repository": "https://github.com/chainreactors/okr-creator",
+    "license": "MIT",
+    "keywords": [
+        "okr",
+        "okr-creator",
+        "objectives",
+        "key-results",
+        "project-planning",
+        "pua",
+        "productivity",
+        "codebuddy"
+    ],
+    "category": "Productivity"
+}

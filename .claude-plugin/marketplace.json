@@ -1,0 +1,20 @@
+{
+    "name": "okr-creator",
+    "description": "OKR Creator for Claude Code -- analyzes any project and generates customized OKR skill with PUA rhetoric, daily GitHub Action review, and issue-based chat",
+    "owner": {
+        "name": "chainreactors, M09ic",
+        "url": "https://github.com/chainreactors"
+    },
+    "plugins": [
+        {
+            "name": "okr-creator",
+            "description": "OKR Creator -- six-dimension project diagnosis, PUA-style intent elicitation, harness-driven KRs, generates .claude/skills/okr/SKILL.md",
+            "version": "1.0.0",
+            "source": "./",
+            "author": {
+                "name": "chainreactors, M09ic",
+                "url": "https://github.com/chainreactors"
+            }
+        }
+    ]
+}
