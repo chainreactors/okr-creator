@@ -142,7 +142,44 @@ AI 会基于诊断数据自主判断方向并生成 OKR，标注 `[Auto-generate
 | **主观能动性** | 主动发现问题、主动引导用户思考、主动提出改进方向 |
 | **构造 Harness** | 每个 KR 都有可验证的验收框架——"我怎么知道这个 KR 完成了"的具体方法 |
 
+## Dogfooding: OKR Creator 用自己管理自己
+
+OKR Creator 正在用自己生成的 OKR 来驱动自身的迭代改进——这就是**自举（bootstrapping）**。
+
+我们对 okr-creator 自身运行了 `/okr`，完成了六维诊断，生成了 5 个 Objectives / 14 个 Key Results，并部署了每日自动评估 Action。现在，每天 UTC 02:00，Claude 会自动检查 okr-creator 自身的 OKR 完成进度，逐条运行 Harness 验收，并在 Issue 中追加评估报告。Maintainer 可以直接在 Issue 中 `@claude` 讨论进度和调整方向。
+
+**自举闭环验证结果：**
+
+| 步骤 | 结果 | 链接 |
+|------|------|------|
+| 六维诊断 + OKR 生成 (5O/14KR) | Pass | [`.claude/skills/okr/SKILL.md`](https://github.com/chainreactors/okr-creator/blob/main/.claude/skills/okr/SKILL.md) |
+| 每日评估 Action 部署 + 运行 | Pass | [Workflow Runs](https://github.com/chainreactors/okr-creator/actions/workflows/okr-review.yml) |
+| 季度 Issue 自动创建 + 评估评论 | Pass | [Issue #1: \[OKR Review\] 2026-Q1 进度追踪](https://github.com/chainreactors/okr-creator/issues/1) |
+| `@claude` 对话续接 | Pass | [Issue #1 评论](https://github.com/chainreactors/okr-creator/issues/1) |
+
+**每日评估输出示例**（来自 [Issue #1](https://github.com/chainreactors/okr-creator/issues/1)）：
+
+> **O1: 完成自举闭环 — OKR Creator 用自己的 OKR 管理自己**
+>
+> | KR | 进度 | 状态 |
+> |----|------|------|
+> | KR1.1 OKR skill 存在且格式合规 | 100% | 🟢 |
+> | KR1.2 每日 Review Action 成功运行 | 100% | 🟢 |
+> | KR1.3 OKR Review Issue 存在且有评估评论 | 100% | 🟢 |
+>
+> **PUA 点评**：你做了一个"帮别人制定 OKR"的工具，自己的 OKR 倒是写出来了。然后呢？E2E 是 0%，模板还是 700 行的巨石，连 CONTRIBUTING.md 都没有——你是想让别人贡献还是想让别人知难而退？
+
+**对话续接示例**（Maintainer 在 Issue 中 `@claude` 后的回复）：
+
+> Maintainer: *@claude KR1.2 和 KR1.3 实际上已经完成了——你正在运行的这次评估本身就是证明。请重新评估 O1 的完成度。*
+>
+> Claude: *O1 整体: 100% — P0 底线 #1 完成。之前评估把"需要 gh run list 授权才能确认"误判为不确定性。实际上自证型证据（你看到的输出就是运行结果）更可靠。*
+
+这证明了 OKR Creator 的完整闭环：**诊断 → 制定 → 落地 → 每日追踪 → 对话讨论 → 调整方向**——全部自动化，全部在 GitHub Issue 中可见。
+
 ## E2E 实测
+
+### 案例一：外部项目 — aide-e2e-test
 
 在 [M09Ic/aide-e2e-test](https://github.com/M09Ic/aide-e2e-test) 上完成了端到端闭环测试：
 
@@ -161,6 +198,18 @@ AI 会基于诊断数据自主判断方向并生成 OKR，标注 `[Auto-generate
 > KR1: 定义至少 5 个 E2E 测试场景 — 进度 0% — `tests/` 目录不存在
 >
 > **PUA 点评**：你花了多少精力在"追踪 OKR 的工具"上？你建了一个完美的 OKR 仪表盘，用来实时播报"一事无成"。建议关掉这个文件，去写第一个测试场景。
+
+### 案例二：自举 — okr-creator 自身
+
+OKR Creator 对自身运行 `/okr`，完成全链路闭环（详见上方 [Dogfooding](#dogfooding-okr-creator-用自己管理自己) 章节）：
+
+| 步骤 | 结果 |
+|------|------|
+| 六维诊断 + OKR 生成 (5O/14KR) | Pass |
+| 每日评估 Action 运行 | Pass (~2 分钟) |
+| 季度 Issue 创建 + 评估评论 | Pass ([Issue #1](https://github.com/chainreactors/okr-creator/issues/1)) |
+| `@claude` 对话续接 + AI 回复 | Pass ([Issue #1 评论](https://github.com/chainreactors/okr-creator/issues/1)) |
+| Claude 自证型重新评估 | Pass（接受运行本身作为 KR 完成证据） |
 
 ## GitHub Action
 
@@ -255,11 +304,16 @@ claude plugin marketplace add tanweai/pua
 chainreactors/okr-creator/
 ├── skills/okr-creator/SKILL.md    # 核心 skill（含 Action 模板）
 ├── commands/okr.md                # /okr slash 命令
+├── .claude/skills/okr/SKILL.md    # 自举：本项目自身的 OKR（dogfooding）
 ├── .claude-plugin/                # Claude Code marketplace 配置
 ├── .codebuddy-plugin/             # CodeBuddy marketplace 配置
 ├── .github/workflows/
+│   ├── okr-review.yml             # 每日 OKR 自动评估（自举用）
+│   ├── okr-chat.yml               # Issue 评论 @claude/@codex 对话
 │   ├── release.yml                # Tag 触发自动发布
 │   └── lint.yml                   # Markdown lint + frontmatter 校验
+├── .github/prompts/
+│   └── okr-review.md              # Codex 评审 prompt
 ├── .markdownlint.json             # Markdown lint 规则
 ├── README.md
 ├── LICENSE
