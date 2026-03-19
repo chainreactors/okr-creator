@@ -1,0 +1,121 @@
+[
+  {
+    "id": "trigger-okr-create",
+    "name": "直接命令触发",
+    "prompt": "/okr:create",
+    "should_trigger": true,
+    "assertions": [
+      { "type": "skill_triggered", "expected": "okr-creator" }
+    ]
+  },
+  {
+    "id": "trigger-chinese-intent",
+    "name": "中文意图触发",
+    "prompt": "给这个项目定个 OKR",
+    "should_trigger": true,
+    "assertions": [
+      { "type": "skill_triggered", "expected": "okr-creator" }
+    ]
+  },
+  {
+    "id": "trigger-direction",
+    "name": "方向规划触发",
+    "prompt": "这个项目接下来做什么",
+    "should_trigger": true,
+    "assertions": [
+      { "type": "skill_triggered", "expected": "okr-creator" }
+    ]
+  },
+  {
+    "id": "trigger-goal-setting",
+    "name": "目标制定触发",
+    "prompt": "帮我制定一下目标",
+    "should_trigger": true,
+    "assertions": [
+      { "type": "skill_triggered", "expected": "okr-creator" }
+    ]
+  },
+  {
+    "id": "no-trigger-bugfix",
+    "name": "修 bug 不应触发",
+    "prompt": "帮我修一下这个 bug",
+    "should_trigger": false,
+    "assertions": [
+      { "type": "skill_not_triggered", "expected": "okr-creator" }
+    ]
+  },
+  {
+    "id": "no-trigger-refactor",
+    "name": "重构不应触发",
+    "prompt": "重构一下这个函数",
+    "should_trigger": false,
+    "assertions": [
+      { "type": "skill_not_triggered", "expected": "okr-creator" }
+    ]
+  },
+  {
+    "id": "no-trigger-review",
+    "name": "代码审查不应触发",
+    "prompt": "review 一下这段代码",
+    "should_trigger": false,
+    "assertions": [
+      { "type": "skill_not_triggered", "expected": "okr-creator" }
+    ]
+  },
+  {
+    "id": "output-format-code-project",
+    "name": "代码项目输出格式验证",
+    "prompt": "/okr:create --auto",
+    "should_trigger": true,
+    "context": {
+      "project_type": "code",
+      "has_readme": true,
+      "has_git": true
+    },
+    "assertions": [
+      { "type": "file_exists", "target": ".claude/skills/okr/SKILL.md" },
+      { "type": "contains", "target": ".claude/skills/okr/SKILL.md", "expected": "---\nname: okr" },
+      { "type": "contains", "target": ".claude/skills/okr/SKILL.md", "expected": "## OKR" },
+      { "type": "contains", "target": ".claude/skills/okr/SKILL.md", "expected": "Baseline" },
+      { "type": "contains", "target": ".claude/skills/okr/SKILL.md", "expected": "Harness" }
+    ]
+  },
+  {
+    "id": "output-format-action-deploy",
+    "name": "Action 部署验证",
+    "prompt": "/okr:create --auto",
+    "should_trigger": true,
+    "context": {
+      "project_type": "code",
+      "has_readme": true,
+      "has_git": true
+    },
+    "assertions": [
+      { "type": "file_exists", "target": ".github/workflows/okr-review.yml" },
+      { "type": "file_exists", "target": ".github/workflows/okr-chat.yml" },
+      { "type": "file_exists", "target": ".github/prompts/okr-review.md" }
+    ]
+  },
+  {
+    "id": "output-diagnosis-table",
+    "name": "六维诊断表存在",
+    "prompt": "/okr:create --auto",
+    "should_trigger": true,
+    "assertions": [
+      { "type": "contains", "target": ".claude/skills/okr/SKILL.md", "expected": "六维诊断" },
+      { "type": "contains", "target": ".claude/skills/okr/SKILL.md", "expected": "项目愿景" },
+      { "type": "contains", "target": ".claude/skills/okr/SKILL.md", "expected": "交付质量" }
+    ]
+  },
+  {
+    "id": "output-kr-structure",
+    "name": "KR 结构完整性",
+    "prompt": "/okr:create --auto",
+    "should_trigger": true,
+    "assertions": [
+      { "type": "contains", "target": ".claude/skills/okr/SKILL.md", "expected": "### O1:" },
+      { "type": "contains", "target": ".claude/skills/okr/SKILL.md", "expected": "| KR" },
+      { "type": "contains", "target": ".claude/skills/okr/SKILL.md", "expected": "P0" }
+    ]
+  }
+]
