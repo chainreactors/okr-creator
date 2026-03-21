@@ -6,8 +6,9 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
   issues: write
+  pull-requests: write
 
 jobs:
   okr-review:
@@ -32,38 +33,7 @@ jobs:
           ANTHROPIC_BASE_URL: ${{ vars.ANTHROPIC_BASE_URL || '' }}
         run: |
           MODEL="${{ vars.CLAUDE_MODEL || 'claude-sonnet-4-6' }}"
-          PROMPT=$(cat <<'PROMPT_EOF'
-          你是 OKR 评审官，同时也是一个大厂 PUA 高手。不要与人类确认，直接执行。
-
-          请阅读 .claude/skills/okr/SKILL.md 中的项目 OKR，然后对每个 KR 的完成情况进行评估。
-
-          执行以下步骤：
-          1. 读取 .claude/skills/okr/SKILL.md，理解项目的 OKR
-          2. 对每个 KR，运行其 Harness（验收方法）或通过分析 repo 现状来评估完成度
-          3. 用 Markdown 格式输出评估报告
-
-          格式要求：
-
-          ## OKR 每日评估
-
-          ### O1: {title}
-          | KR | 进度 | 状态 | 证据 | 建议 |
-          |----|------|------|------|------|
-          | KR1 | X% | 🔴/🟡/🟢 | ... | ... |
-
-          ### 风险与建议
-          - ...
-
-          ### PUA 点评
-          > ...
-
-          要求：
-          - 每个 KR 的证据必须基于实际检查（读文件、跑命令），不要猜
-          - 不要与人类确认任何事情，直接执行并输出结果
-          - 如果 .claude/skills/okr/SKILL.md 不存在，输出 "OKR not found"
-          PROMPT_EOF
-          )
-
+          PROMPT=$(cat .github/prompts/okr-review.md)
           RESULT=$(claude -p "$PROMPT" --model "$MODEL" --output-format text 2>&1) || true
           echo "$RESULT" > /tmp/okr-review-output.txt
 
@@ -78,6 +48,28 @@ jobs:
         run: |
           RESULT=$(codex exec --prompt-file .github/prompts/okr-review.md --approval-mode full-auto 2>&1) || true
           echo "$RESULT" > /tmp/okr-review-output.txt
+
+      - name: Extract PROGRESS.md update
+        id: extract-progress
+        run: |
+          if [ -f /tmp/okr-review-output.txt ]; then
+            # Extract content between PROGRESS markers
+            sed -n '/^---PROGRESS_START---$/,/^---PROGRESS_END---$/p' /tmp/okr-review-output.txt \
+              | sed '1d;$d' > /tmp/okr-progress-update.md
+
+            if [ -s /tmp/okr-progress-update.md ]; then
+              echo "has_progress=true" >> "$GITHUB_OUTPUT"
+            else
+              echo "has_progress=false" >> "$GITHUB_OUTPUT"
+            fi
+
+            # Remove PROGRESS block from review output (keep only the report for Issue)
+            sed '/^---PROGRESS_START---$/,/^---PROGRESS_END---$/d' /tmp/okr-review-output.txt \
+              > /tmp/okr-review-clean.txt
+            mv /tmp/okr-review-clean.txt /tmp/okr-review-output.txt
+          else
+            echo "has_progress=false" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Create or Update OKR Review Issue
         env:
@@ -118,6 +110,7 @@ jobs:
               echo "本 Issue 自动追踪本季度 OKR 完成进度。"
               echo ""
               echo "- OKR 文件: \`.claude/skills/okr/SKILL.md\`"
+              echo "- 进展文件: \`.claude/skills/okr/PROGRESS.md\`"
               echo "- Agent: \`${AGENT}\`"
               echo "- 自动评估: 每日 UTC 02:00"
               echo "- 对话: 评论中 \`@claude\` 或 \`@codex\` 开头即可触发 AI 回复"
@@ -134,4 +127,36 @@ jobs:
             if [ -n "$ISSUE_NUM" ]; then
               gh issue comment "$ISSUE_NUM" --body-file /tmp/okr-comment-body.md || true
             fi
+          fi
+
+      - name: Update PROGRESS.md and create PR
+        if: steps.extract-progress.outputs.has_progress == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TODAY=$(date -u +%Y-%m-%d)
+          BRANCH="okr-review/${TODAY}"
+
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          # Delete remote branch if exists (re-run on same day)
+          git push origin --delete "$BRANCH" 2>/dev/null || true
+          git checkout -b "$BRANCH"
+
+          mkdir -p .claude/skills/okr
+          cp /tmp/okr-progress-update.md .claude/skills/okr/PROGRESS.md
+
+          git add .claude/skills/okr/PROGRESS.md
+          git commit -m "chore(okr): update progress ${TODAY}" || exit 0
+          git push origin "$BRANCH"
+
+          # Check if PR already exists for today
+          EXISTING_PR=$(gh pr list --head "$BRANCH" --json number --jq '.[0].number' 2>/dev/null || echo "")
+          if [ -z "$EXISTING_PR" ]; then
+            gh pr create \
+              --title "[OKR Review] ${TODAY} 进展更新" \
+              --body "每日 OKR 评审自动生成的进展更新。合并后 PROGRESS.md 将更新到最新状态。" \
+              --label "okr-review" \
+              --base main
           fi

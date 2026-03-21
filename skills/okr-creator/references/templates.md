@@ -72,17 +72,61 @@ license: MIT
 - 遇到优先级冲突时，按 O 的排序决策（O1 > O2 > ...）
 - P0 是底线——做不到就算季度失败
 - 发现与 OKR 不一致的方向时，主动提出讨论
+
+## 执行协议
+
+开始任何任务前，执行以下检查：
+
+1. **对齐检查** — 这个任务与哪个 KR 相关？如果找不到对应 KR，提醒用户这项工作可能不在当前季度优先级内。
+2. **优先级检查** — 是否有更高优先级的 P0 KR 尚未完成？如果有，建议先处理 P0。
+3. **阻塞检查** — 这个 KR 是否依赖其他 KR？如果被依赖的 KR 未完成，提醒用户。
+4. **进展感知** — 读取 `.claude/skills/okr/PROGRESS.md`（如果存在）了解当前进展，避免重复工作。
+5. **完成标注** — 完成任务后，标注 `[Ox-KRx.x]` 并说明对进度的影响。
+
+### 任务推荐规则
+
+当用户问"接下来做什么"时，按以下优先级推荐：
+
+1. 被多个 KR 依赖的阻塞项（解锁价值最大）
+2. P0 KR 中进度最低的（底线优先）
+3. 投入产出比最高的（小 effort 大 impact）
+4. 时间敏感项（即将到期）
+
+### 改进模式
+
+基于六维诊断，以下改进模式适用于本项目（由 okr-creator 基于诊断自动选择）：
+
+{根据六维诊断分数，从 `references/patterns.md` 中选择 2-4 个适用模式嵌入此处}
+
+## KR 分解（Weekly Focus）
+
+{为每个 P0 和 P1 KR 生成 4 周 breakdown}
+
+### {KR ID} {KR 描述}
+- Week 1: {具体任务}
+- Week 2: {具体任务}
+- Week 3: {具体任务}
+- Week 4: {具体任务}
+
+## 进展追踪
+
+- 进展文件：`.claude/skills/okr/PROGRESS.md`
+- 由每日评审 Action 自动维护，包含：KR 状态快照、六维趋势、行动队列、评审历史
+- AI 在开始任何任务前应读取此文件了解当前进展
+- 完成任务后应建议更新相关 KR 的进度
 ```
 
 ## 2. GitHub Action 模板
 
 Action 模板以独立文件形式存放在 `templates/` 目录下，部署时直接复制：
 
-| 模板文件 | 部署路径 | 功能 |
-|---------|---------|------|
-| `templates/okr-review.yml` | `.github/workflows/okr-review.yml` | 每日 UTC 02:00 自动评估 + 手动触发 |
-| `templates/okr-chat.yml` | `.github/workflows/okr-chat.yml` | Issue 评论 `@claude`/`@codex` 触发对话 |
-| `templates/okr-review.md` | `.github/prompts/okr-review.md` | Codex 专用评审 prompt |
+| 模板文件 | 部署路径 | 功能 | 必选 |
+|---------|---------|------|------|
+| `templates/okr-review.yml` | `.github/workflows/okr-review.yml` | 每日自动评估 + PROGRESS.md 更新 PR | 是 |
+| `templates/okr-chat.yml` | `.github/workflows/okr-chat.yml` | Issue 评论 `@claude`/`@codex` 触发对话 | 是 |
+| `templates/okr-review.md` | `.github/prompts/okr-review.md` | 评审 prompt（5 阶段协议，Claude/Codex 通用） | 是 |
+| `templates/okr-align-check.yml` | `.github/workflows/okr-align-check.yml` | PR/push OKR 对齐检查 | 可选 |
+| `templates/okr-align-prompt.md` | `.github/prompts/okr-align-check.md` | 对齐检查 prompt | 可选 |
 
 ### 技术要点
 

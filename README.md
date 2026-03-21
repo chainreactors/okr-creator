@@ -90,37 +90,50 @@ AI 会基于诊断数据自主判断方向并生成 OKR，标注 `[Auto-generate
 
 ## How It Works
 
+OKR Creator 不只是生成目标——它构建了一个完整的**项目改进引擎**：SKILL.md 定义方向和执行协议，PROGRESS.md 持久化进展记忆，GitHub Actions 每日深度评审并给出改进建议，可选的对齐检查让每次 PR 都与目标对齐。
+
 ```
-┌─────────────────────────────────────────────────────┐
-│                    /okr:create 触发                         │
-└──────────┬──────────────────────────────────────────┘
+┌────────────────────────────────────────────────┐
+│              /okr:create 触发                       │
+└──────────┬─────────────────────────────────────┘
            ▼
 ┌──────────────────┐     ┌──────────────────┐
 │  Step 1-2        │     │  Step 3          │
-│  读项目 → 六维诊断 │────▶│  拷问用户意图     │
+│  读项目 → 六维诊断│────▶│  拷问用户意图     │
 └──────────────────┘     └────────┬─────────┘
                                   ▼
-┌──────────────────┐     ┌──────────────────┐
-│  Step 4          │     │  Step 5-6        │
-│  制定 OKR        │────▶│  生成 SKILL.md    │
-│  (Harness 驱动)  │     │  写入 & 验证      │
-└──────────────────┘     └────────┬─────────┘
+┌──────────────────┐     ┌──────────────────────┐
+│  Step 4          │     │  Step 5-6            │
+│  制定 OKR        │────▶│  生成 SKILL.md       │
+│  + KR 周分解     │     │  + PROGRESS.md 初始化 │
+│  + 改进模式选择  │     │  写入 & 验证          │
+└──────────────────┘     └────────┬────────────┘
                                   ▼
 ┌──────────────────────────────────────────────┐
 │  Step 7: 部署 GitHub Action                   │
 │                                               │
-│  okr-review.yml → 每日自动评估，创建 Issue     │
-│  okr-chat.yml   → @claude/@codex 对话续接     │
-│  okr-review.md  → Codex 评审 prompt           │
-│  okr-review label → 自动创建                   │
+│  okr-review.yml  → 每日深度评审 + 自动 PR      │
+│  okr-chat.yml    → @claude/@codex 对话续接     │
+│  okr-review.md   → 评审 prompt（通用）         │
+│  [可选] okr-align-check.yml → PR 对齐检查      │
 └──────────────────────────────────────────────┘
            ▼
 ┌──────────────────────────────────────────────┐
-│  每日闭环                                     │
+│  改进引擎（持续运转）                          │
 │                                               │
-│  UTC 02:00 → Claude/Codex 评估每个 KR         │
-│  → 运行 Harness 验证 → Issue 追加评估评论      │
-│  → Maintainer @claude 讨论 → AI 回复          │
+│  ┌ 每日 02:00 ──────────────────────────┐    │
+│  │ 读 SKILL.md + PROGRESS.md            │    │
+│  │ → 5 阶段深度评审（不只是进度追踪）     │    │
+│  │ → 根因分析 + 跨 KR 依赖 + 行动队列   │    │
+│  │ → Issue 评审 + 自动 PR 更新进展       │    │
+│  └──────────────────────────────────────┘    │
+│  ┌ 每次 PR（可选）─────────────────────┐     │
+│  │ OKR 对齐检查 → PR comment           │     │
+│  └──────────────────────────────────────┘    │
+│  ┌ 日常开发 ────────────────────────────┐    │
+│  │ SKILL.md 执行协议自动引导            │    │
+│  │ → 对齐检查 → 优先级推荐 → 完成标注   │    │
+│  └──────────────────────────────────────┘    │
 └──────────────────────────────────────────────┘
 ```
 
@@ -129,10 +142,13 @@ AI 会基于诊断数据自主判断方向并生成 OKR，标注 `[Auto-generate
 1. **全面诊断** — 六维分析项目现状（愿景、质量、债务、架构、文档、自动化）
 2. **共建 OKR** — PUA 话术引导用户明确方向，结合诊断生成可量化的 OKR
 3. **Harness 驱动** — 每个 KR 必须有可验证的验收方法，没有 harness 的 KR = 废纸
-4. **落地为 Skill** — 输出到 `.claude/skills/okr/SKILL.md`，AI 每次工作都能参考
-5. **自动部署 Action** — 一键写入 workflow + prompt + label，用户只需配置 API Key
-6. **每日自动评估** — GitHub Action 每天跑 Harness 验收，Issue 追踪进度
-7. **对话续接** — Maintainer 在 Issue 中 `@claude` / `@codex` 直接与 AI 讨论 OKR
+4. **执行协议** — SKILL.md 内置任务对齐检查、优先级推荐、KR 周分解，主动引导 AI 的每个任务
+5. **PROGRESS.md 记忆** — 持久化进展文件，AI 每次评审不再从零开始，支持趋势分析和建议追踪
+6. **5 阶段深度评审** — 不只是进度百分比：根因分析、跨 KR 依赖、六维趋势、优先级行动队列
+7. **自动 PR 更新** — 每日评审后自动创建 PR 更新 PROGRESS.md，用户审核后合并
+8. **PR 对齐检查（可选）** — 每个 PR 自动评估与 OKR 的关联度，给出非阻塞的建议
+9. **对话续接** — Maintainer 在 Issue 中 `@claude` / `@codex` 直接与 AI 讨论 OKR
+10. **改进模式库** — 基于六维诊断自动匹配可复用的改进策略（测试冷启动、文档冲刺等）
 
 ## 三个核心理念
 
@@ -191,13 +207,24 @@ OKR Creator 正在用自己生成的 OKR 来驱动自身的迭代改进——这
 | Claude Code CLI 安装 + 执行 | Pass (npm install -g) |
 | Issue 自动创建 ([#54](https://github.com/M09Ic/aide-e2e-test/issues/54)) | Pass |
 | AI 评估内容有效（逐 KR 证据+PUA 点评） | Pass |
+| v2 深度评审（根因分析+行动队列+六维趋势） | Pass |
+| PROGRESS.md 自动更新 PR ([#55](https://github.com/M09Ic/aide-e2e-test/pull/55)) | Pass |
+| OKR 对齐检查 Action 部署 | Pass |
 | Workflow 总耗时 | ~2 分钟 |
 
-**评估输出示例**（来自真实 Issue #54）：
+**v2 评审输出示例**（来自真实 Issue #54）：
 
-> KR1: 定义至少 5 个 E2E 测试场景 — 进度 0% — `tests/` 目录不存在
+> **阻塞项根因**
 >
-> **PUA 点评**：你花了多少精力在"追踪 OKR 的工具"上？你建了一个完美的 OKR 仪表盘，用来实时播报"一事无成"。建议关掉这个文件，去写第一个测试场景。
+> **O1-KR1 定义至少 5 个 E2E 测试场景** — 根因类型：priority。过去 4 天的所有提交集中于 OKR 基础设施，没有一行代码推进实际测试场景定义。最小解锁动作：在 `tests/` 目录下创建 5 个 Markdown 场景文件。
+>
+> **行动队列**
+>
+> | # | 行动 | 推进 KR | 工作量 | 为什么现在做 |
+> |---|------|---------|--------|------------|
+> | 1 | 创建 tests/ + 5 个场景文件 | O1-KR1 | S | 关键路径起点 |
+> | 2 | 新建 e2e-test.yml CI | O1-KR2 | S | 解锁测试链路 |
+> | 3 | 扩写 README 至 50+ 行 | O2-KR1 | S | 独立 P0，30 分钟 |
 
 ### 案例二：自举 — okr-creator 自身
 
@@ -211,17 +238,106 @@ OKR Creator 对自身运行 `/okr`，完成全链路闭环（详见上方 [Dogfo
 | `@claude` 对话续接 + AI 回复 | Pass ([Issue #1 评论](https://github.com/chainreactors/okr-creator/issues/1)) |
 | Claude 自证型重新评估 | Pass（接受运行本身作为 KR 完成证据） |
 
-## GitHub Action
+## GitHub Action 与 Skill 的互动机制
 
-`/okr:create` 运行后自动部署以下文件到目标项目：
+OKR 的核心不只是"定目标"——而是 Skill 和 Action 的协同，形成持续改进的闭环：
+
+| 组件 | 位置 | 角色 |
+|------|------|------|
+| **SKILL.md** | `.claude/skills/okr/SKILL.md` | OKR 定义 + 执行协议 + 改进模式 + KR 周分解 |
+| **PROGRESS.md** | `.claude/skills/okr/PROGRESS.md` | AI 的"记忆"——进展快照、行动队列、评审历史 |
+| **okr-review.yml** | `.github/workflows/` | 每日深度评审 + 自动创建 PR 更新进展 |
+| **okr-chat.yml** | `.github/workflows/` | Issue 中 @claude/@codex 对话续接 |
+| **okr-review.md** | `.github/prompts/` | 5 阶段评审 prompt（Claude/Codex 通用） |
+| **okr-align-check.yml** | `.github/workflows/` | [可选] PR 对齐检查 |
+
+### Skill ↔ Action 互动流
 
 ```
+日常开发                            每日评审 Action
+┌────────────┐                    ┌──────────────────────┐
+│ AI 读 SKILL.md                  │ 1. 读 SKILL.md       │
+│ → 执行协议自动检查               │ 2. 读 PROGRESS.md    │
+│   "这个任务关联哪个 KR？"        │ 3. 逐 KR 跑 Harness  │
+│   "有 P0 未完成，建议先做"       │ 4. 5 阶段深度分析     │
+│ → 完成后标注 [O1-KR1.1]         │ 5. 输出评审 + 更新进展 │
+└──────┬─────┘                    └──────┬───────────────┘
+       │                                 │
+       ▼                                 ▼
+┌────────────┐                    ┌──────────────────────┐
+│ 代码变更    │                    │ Issue: 评审评论       │
+│ → git push │                    │ PR: PROGRESS.md 更新  │
+└──────┬─────┘                    └──────────────────────┘
+       │
+       ▼ (可选)
+┌──────────────────┐
+│ okr-align-check  │
+│ → PR comment:    │
+│   "关联 KR2.1"   │
+│   "对齐 P0 优先级"│
+│   "进度 0%→30%"  │
+└──────────────────┘
+```
+
+### 5 阶段深度评审（不只是进度追踪）
+
+每日评审采用 5 阶段协议，远超简单的进度百分比：
+
+| 阶段 | 内容 | 价值 |
+|------|------|------|
+| Phase 1 | 加载 SKILL.md + PROGRESS.md | 不再从零阅读，有历史记忆 |
+| Phase 2 | 逐 KR 执行 Harness + **根因分析** | 不只是"0%"，还告诉你**为什么卡住**和**最小解锁动作** |
+| Phase 3 | 跨 KR 依赖 + Objective 健康度 | 发现阻塞链，知道先解锁哪个能释放最大价值 |
+| Phase 4 | 趋势分析 + 建议追踪 | 与上次对比，连续停滞自动预警，检查上次建议是否被执行 |
+| Phase 5 | 优先级行动队列 + PUA 点评 | 不是"建议多写测试"，而是"在 lint.yml 添加 frontmatter 检查 job，工作量 S" |
+
+### PROGRESS.md — AI 的持久化记忆
+
+每次评审不再从零开始。PROGRESS.md 由 Action 自动维护，通过 PR 更新：
+
+```markdown
+## 当前状态快照
+| KR | 进度 | 状态 | 连续停滞天数 |
+| KR1.1 | 100% | done | 0 |
+| KR2.1 | 0% | blocked | 5 |        ← 连续 5 天停滞，自动升级预警
+
+## 行动队列
+| # | 行动 | 状态 | 提出日期 | 执行日期 |
+| 1 | 添加 frontmatter 检查 | done | 03-20 | 03-21 |  ← 建议追踪闭环
+| 2 | 创建 e2e.yml 骨架 | pending | 03-21 | - |
+
+## 评审历史                         ← 最多保留 30 条
+```
+
+### PR 对齐检查（可选）
+
+在每个 PR 上自动评估与 OKR 的关联度，以 **非阻塞的 PR comment** 形式输出：
+
+```markdown
+## OKR 对齐检查
+关联 KR: KR2.1 (SKILL.md 结构化验证 CI)
+对齐状态: ✅ 与 P0 优先级一致
+预估进度影响: KR2.1: 0% → 30%
+建议: 下一步添加章节检测（参考 KR 周分解 Week 2）
+```
+
+### 部署的文件结构
+
+`/okr:create` 运行后自动部署到目标项目：
+
+```
+.claude/skills/okr/
+├── SKILL.md              # OKR + 执行协议 + 改进模式 + KR 周分解
+└── PROGRESS.md           # 进展记录（Action 自动维护）
+
 .github/
 ├── workflows/
-│   ├── okr-review.yml     # 每日 UTC 02:00 自动评估
-│   └── okr-chat.yml       # Issue 评论 @claude/@codex 对话
+│   ├── okr-review.yml    # 每日深度评审 + 自动 PR
+│   ├── okr-chat.yml      # @claude/@codex 对话续接
+│   └── okr-align-check.yml  # [可选] PR 对齐检查
 └── prompts/
-    └── okr-review.md      # Codex 评审 prompt
+    ├── okr-review.md     # 评审 prompt（Claude/Codex 通用）
+    └── okr-align-check.md   # [可选] 对齐检查 prompt
 ```
 
 ### 配置（部署后只需这一步）
@@ -238,16 +354,9 @@ gh variable set ANTHROPIC_BASE_URL --body "https://your-proxy.com"
 gh variable set OKR_AGENT --body "codex"
 
 # 推送并测试
-git add .github/ && git commit -m "feat: add OKR review actions" && git push
+git add .github/ .claude/ && git commit -m "feat: add OKR review actions" && git push
 gh workflow run okr-review.yml
 ```
-
-### 每日评估
-
-- 每天 UTC 02:00 自动运行（也可手动触发）
-- Claude/Codex 读取 OKR → 逐条运行 Harness → 生成 Markdown 评估报告
-- 自动创建季度 Issue `[OKR Review] YYYY-QN 进度追踪`
-- 每日追加评估评论，包含进度、证据、建议、PUA 点评
 
 ### 对话续接
 
@@ -265,13 +374,52 @@ Maintainer 在 OKR Review Issue 中评论即可与 AI 对话：
 | Member / Collaborator | 可查看 | `@claude` / `@codex` |
 | 外部用户 | 可查看 | **不触发** |
 
-### 技术细节
+## 如何用 OKR 改进你的项目
 
-- 使用 `npm install -g @anthropic-ai/claude-code` 安装 CLI，**不依赖 GitHub App**
-- `claude -p` 非交互模式 + `--output-format text`
-- 支持 `ANTHROPIC_BASE_URL` 自定义 API 端点（兼容代理）
-- Codex 使用 `codex exec --approval-mode full-auto`
-- 自动创建 `okr-review` label
+OKR Creator 的设计目标不只是"定 OKR"——而是让 OKR 真正驱动项目改进。以下是推荐的使用方式：
+
+### 1. 生成：让 AI 理解你的项目
+
+```bash
+/okr:create
+```
+
+AI 会做六维诊断、与你对齐方向、生成带执行协议的 OKR。关键是**不要跳过 Step 3 的意图拷问**——你的方向决定了 OKR 的质量。
+
+### 2. 日常：让 OKR 引导每个任务
+
+SKILL.md 中的**执行协议**会在你每次使用 AI 时自动生效：
+
+- 开始任务前，AI 检查"这个任务关联哪个 KR？"
+- 如果有 P0 未完成，AI 建议先处理底线
+- 完成后，AI 标注 `[O1-KR1.1]` 记录贡献
+
+当你问"接下来做什么"时，AI 基于 PROGRESS.md 推荐最高价值的任务。
+
+### 3. 每日评审：获取可执行的改进建议
+
+每天的评审不只是报告"完成了 X%"——它会告诉你：
+
+- **为什么卡住** — 根因分析指出具体的文件、配置、决策缺失
+- **最小解锁动作** — 一个 1-2 小时内可完成的具体任务
+- **先做什么** — 优先级排序的行动队列，每个带工作量估算
+- **趋势预警** — 连续停滞的 KR 自动升级优先级
+
+### 4. 反馈闭环：建议 → 执行 → 追踪
+
+每次评审的建议会被持久化到 PROGRESS.md 的行动队列中。下次评审时，AI 检查：
+
+- 建议被执行了？→ 确认效果
+- 建议被忽略了？→ 分析原因，升级优先级或调整建议
+
+### 5. PR 对齐：让每次提交都有方向感
+
+开启可选的 `okr-align-check`，每个 PR 都会收到一条 comment：
+
+- 关联了哪个 KR
+- 是否在做最优先的事
+- 预估推进了多少进度
+- 下一步建议做什么
 
 ## 大厂 PUA 风味包
 
@@ -302,20 +450,31 @@ claude plugin marketplace add tanweai/pua
 
 ```
 chainreactors/okr-creator/
-├── skills/okr-creator/SKILL.md    # 核心 skill（含 Action 模板）
+├── skills/okr-creator/
+│   ├── SKILL.md                   # 核心 skill — 8 步执行流程
+│   ├── agents/                    # 专用 agent 定义
+│   │   ├── diagnostician.md       # 六维诊断
+│   │   ├── interviewer.md         # 用户意图拷问
+│   │   └── reviewer.md            # OKR 质量评审
+│   ├── templates/                 # 可部署的 Action 模板
+│   │   ├── okr-review.yml         # 每日深度评审 + 自动 PR
+│   │   ├── okr-chat.yml           # Issue 对话续接
+│   │   ├── okr-review.md          # 评审 prompt（Claude/Codex 通用）
+│   │   ├── okr-align-check.yml    # [可选] PR 对齐检查
+│   │   └── okr-align-prompt.md    # [可选] 对齐检查 prompt
+│   ├── references/
+│   │   ├── schemas.md             # 数据结构定义
+│   │   ├── templates.md           # SKILL.md 输出模板
+│   │   └── patterns.md            # 改进模式库（8 个模式）
+│   └── flavors/                   # PUA 风味包
 ├── commands/create.md             # /okr:create slash 命令
-├── .claude/skills/okr/SKILL.md    # 自举：本项目自身的 OKR（dogfooding）
+├── .claude/skills/okr/
+│   ├── SKILL.md                   # 自举：本项目自身的 OKR
+│   └── PROGRESS.md                # 自举：进展记录
 ├── .claude-plugin/                # Claude Code marketplace 配置
 ├── .codebuddy-plugin/             # CodeBuddy marketplace 配置
-├── .github/workflows/
-│   ├── okr-review.yml             # 每日 OKR 自动评估（自举用）
-│   ├── okr-chat.yml               # Issue 评论 @claude/@codex 对话
-│   ├── release.yml                # Tag 触发自动发布
-│   └── lint.yml                   # Markdown lint + frontmatter 校验
-├── .github/prompts/
-│   └── okr-review.md              # Codex 评审 prompt
-├── .markdownlint.json             # Markdown lint 规则
 ├── README.md
+├── README-en.md
 ├── LICENSE
 └── .gitignore
 ```

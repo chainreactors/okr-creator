@@ -1,0 +1,87 @@
+name: OKR Alignment Check
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+  # Uncomment to also check on push to main:
+  # push:
+  #   branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  okr-align-check:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch'
+    env:
+      OKR_AGENT: ${{ vars.OKR_AGENT || 'claude' }}
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check OKR file exists
+        id: check-okr
+        run: |
+          if [ -f .claude/skills/okr/SKILL.md ]; then
+            echo "has_okr=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_okr=false" >> "$GITHUB_OUTPUT"
+            echo "No OKR file found at .claude/skills/okr/SKILL.md — skipping alignment check."
+          fi
+
+      - name: Get PR diff
+        if: steps.check-okr.outputs.has_okr == 'true' && github.event_name == 'pull_request'
+        run: |
+          git diff "${{ github.event.pull_request.base.sha }}...${{ github.event.pull_request.head.sha }}" > /tmp/pr-diff.txt
+          # Truncate if too large (keep first 500 lines to stay within token limits)
+          head -500 /tmp/pr-diff.txt > /tmp/pr-diff-truncated.txt
+
+      - name: Install Claude Code
+        if: steps.check-okr.outputs.has_okr == 'true' && env.OKR_AGENT == 'claude'
+        run: npm install -g @anthropic-ai/claude-code
+
+      - name: OKR Alignment Check (Claude Code)
+        if: steps.check-okr.outputs.has_okr == 'true' && env.OKR_AGENT == 'claude'
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          ANTHROPIC_BASE_URL: ${{ vars.ANTHROPIC_BASE_URL || '' }}
+        run: |
+          MODEL="${{ vars.CLAUDE_MODEL || 'claude-sonnet-4-6' }}"
+          PROMPT=$(cat .github/prompts/okr-align-check.md)
+          RESULT=$(claude -p "$PROMPT" --model "$MODEL" --output-format text 2>&1) || true
+          echo "$RESULT" > /tmp/okr-align-output.txt
+
+      - name: Install Codex
+        if: steps.check-okr.outputs.has_okr == 'true' && env.OKR_AGENT == 'codex'
+        run: npm install -g @openai/codex
+
+      - name: OKR Alignment Check (Codex)
+        if: steps.check-okr.outputs.has_okr == 'true' && env.OKR_AGENT == 'codex'
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: |
+          RESULT=$(codex exec --prompt-file .github/prompts/okr-align-check.md --approval-mode full-auto 2>&1) || true
+          echo "$RESULT" > /tmp/okr-align-output.txt
+
+      - name: Post PR comment
+        if: steps.check-okr.outputs.has_okr == 'true' && github.event_name == 'pull_request'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if [ -f /tmp/okr-align-output.txt ] && [ -s /tmp/okr-align-output.txt ]; then
+            {
+              echo "## OKR 对齐检查"
+              echo ""
+              cat /tmp/okr-align-output.txt
+              echo ""
+              echo "---"
+              echo "*由 [OKR Alignment Check](${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}) 自动生成*"
+            } > /tmp/okr-align-comment.md
+
+            gh pr comment "${{ github.event.pull_request.number }}" --body-file /tmp/okr-align-comment.md
+          fi

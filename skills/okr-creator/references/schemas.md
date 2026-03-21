@@ -113,7 +113,116 @@ reviewer agent 的输出。
 }
 ```
 
-## 5. Eval 用例 (EvalCase)
+## 5. 每日评审报告 (DailyReviewReport)
+
+每日评审 Action 的输出结构。
+
+```json
+{
+  "$schema": "daily_review",
+  "date": "ISO 8601 date",
+  "review_sequence": "number — 本季度第 N 次评审",
+  "objectives": [
+    {
+      "id": "O1",
+      "title": "string",
+      "health": "healthy | at_risk | critical",
+      "key_results": [
+        {
+          "id": "KR1.1",
+          "description": "string",
+          "progress_pct": "number 0-100",
+          "status": "completed | on_track | at_risk | blocked | not_started",
+          "evidence": "string — 实际命令输出或文件内容",
+          "root_cause": "string | null — 仅 at_risk/blocked",
+          "root_cause_type": "resource | knowledge | dependency | priority | null",
+          "unblock_action": "string | null — 最小解锁动作",
+          "velocity": "accelerating | steady | decelerating | stalled | null",
+          "prev_progress_pct": "number | null",
+          "stalled_days": "number — 连续停滞天数"
+        }
+      ]
+    }
+  ],
+  "six_dimensions": {
+    "vision":       { "score": "1-5", "delta": "number", "note": "string" },
+    "quality":      { "score": "1-5", "delta": "number", "note": "string" },
+    "debt":         { "score": "1-5", "delta": "number", "note": "string" },
+    "architecture": { "score": "1-5", "delta": "number", "note": "string" },
+    "docs":         { "score": "1-5", "delta": "number", "note": "string" },
+    "automation":   { "score": "1-5", "delta": "number", "note": "string" }
+  },
+  "cross_kr_insights": ["string — 依赖链、共同根因等"],
+  "action_queue": [
+    {
+      "rank": "number",
+      "action": "string — 具体任务描述",
+      "advances_kr": "string — KR ID",
+      "effort": "small | medium | large",
+      "rationale": "string — 为什么现在做"
+    }
+  ],
+  "previous_actions_status": [
+    {
+      "action": "string",
+      "status": "done | pending | skipped",
+      "note": "string | null"
+    }
+  ],
+  "pua_commentary": "string"
+}
+```
+
+## 6. 进展文件 (ProgressFile)
+
+`.claude/skills/okr/PROGRESS.md` 的结构化表示，由每日评审自动维护。
+
+```json
+{
+  "$schema": "progress_file",
+  "last_updated": "ISO 8601 date",
+  "kr_snapshot": [
+    {
+      "id": "KR1.1",
+      "description": "string",
+      "progress_pct": "number 0-100",
+      "status": "completed | on_track | at_risk | blocked | not_started",
+      "last_change_date": "ISO 8601 date | null",
+      "stalled_days": "number"
+    }
+  ],
+  "six_dimensions_trend": [
+    {
+      "dimension": "string",
+      "initial": "number 1-5",
+      "previous": "number 1-5",
+      "current": "number 1-5",
+      "trend": "up | flat | down"
+    }
+  ],
+  "action_queue": [
+    {
+      "rank": "number",
+      "action": "string",
+      "advances_kr": "string",
+      "status": "pending | done | skipped",
+      "proposed_date": "ISO 8601 date",
+      "completed_date": "ISO 8601 date | null"
+    }
+  ],
+  "review_history": [
+    {
+      "date": "ISO 8601 date",
+      "summary": "string — KR 进度一行摘要",
+      "new_actions": ["string"],
+      "pua_oneliner": "string"
+    }
+  ]
+}
+```
+
+## 7. Eval 用例 (EvalCase)
+
 
 用于测试 skill 质量的评测用例。
 
@@ -140,7 +249,7 @@ reviewer agent 的输出。
 }
 ```
 
-## 6. Benchmark 结果 (BenchmarkResult)
+## 8. Benchmark 结果 (BenchmarkResult)
 
 eval 运行的汇总统计。
 

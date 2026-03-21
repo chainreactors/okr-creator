@@ -90,6 +90,8 @@ The AI will autonomously determine direction based on diagnostic data and genera
 
 ## How It Works
 
+OKR Creator doesn't just generate goals — it builds a complete **project improvement engine**: SKILL.md defines direction and execution protocol, PROGRESS.md persists progress memory, GitHub Actions perform daily deep reviews with actionable suggestions, and optional alignment checks keep every PR on target.
+
 ```
 +---------------------------------------------------+
 |               /okr-creator:okr triggered           |
@@ -103,24 +105,33 @@ The AI will autonomously determine direction based on diagnostic data and genera
 +-------------------+     +--------v---------+
 |  Step 4            |     |  Step 5-6        |
 |  Define OKRs       |---->|  Generate SKILL  |
-|  (Harness-driven)  |     |  Write & verify  |
+|  + Weekly breakdown |     |  + PROGRESS.md   |
+|  + Pattern matching |     |  Write & verify  |
 +-------------------+     +--------+---------+
                                     |
 +-------------------------------------------+
 |  Step 7: Deploy GitHub Action              |
 |                                            |
-|  okr-review.yml -> Daily review, Issue     |
-|  okr-chat.yml   -> @claude/@codex chat     |
-|  okr-review.md  -> Codex review prompt     |
-|  okr-review label -> Auto-created          |
+|  okr-review.yml  -> Deep review + auto PR  |
+|  okr-chat.yml    -> @claude/@codex chat    |
+|  okr-review.md   -> Review prompt (shared) |
+|  [opt] okr-align-check.yml -> PR check     |
 +-------------------------------------------+
            |
 +-------------------------------------------+
-|  Daily Loop                                |
+|  Improvement Engine (continuous)           |
 |                                            |
-|  UTC 02:00 -> Claude/Codex reviews KRs     |
-|  -> Run Harness -> Append Issue comment    |
-|  -> Maintainer @claude -> AI replies       |
+|  Daily 02:00:                              |
+|    Read SKILL.md + PROGRESS.md             |
+|    -> 5-phase deep review                  |
+|    -> Root cause + dependencies + actions  |
+|    -> Issue comment + auto PR for progress |
+|                                            |
+|  Every PR (optional):                      |
+|    -> OKR alignment check -> PR comment    |
+|                                            |
+|  Daily dev:                                |
+|    -> Execution protocol guides each task  |
 +-------------------------------------------+
 ```
 
@@ -129,10 +140,13 @@ The AI will autonomously determine direction based on diagnostic data and genera
 1. **Full Diagnosis** — Six-dimension analysis of project status (vision, quality, debt, architecture, docs, automation)
 2. **Co-created OKRs** — Guided rhetoric helps users clarify direction, combined with diagnostics to generate measurable OKRs
 3. **Harness-driven** — Every KR must have a verifiable acceptance method; a KR without a harness is waste paper
-4. **Delivered as Skill** — Output to `.claude/skills/okr/SKILL.md` so AI can reference it every time it works
-5. **Auto-deploy Action** — One-click workflow + prompt + label deployment; users just configure their API key
-6. **Daily Automated Review** — GitHub Action runs Harness daily, Issue tracks progress
-7. **Chat Continuation** — Maintainers `@claude` / `@codex` in Issues to discuss OKRs directly with AI
+4. **Execution Protocol** — SKILL.md includes task alignment checks, priority recommendations, and weekly KR breakdowns to actively guide every AI task
+5. **PROGRESS.md Memory** — Persistent progress file so AI reviews don't start from zero; supports trend analysis and suggestion tracking
+6. **5-Phase Deep Review** — Beyond progress percentages: root cause analysis, cross-KR dependencies, six-dimension trends, prioritized action queue
+7. **Auto PR Updates** — Daily review auto-creates PR to update PROGRESS.md; users review and merge
+8. **PR Alignment Check (optional)** — Each PR gets a non-blocking comment assessing OKR alignment
+9. **Chat Continuation** — Maintainers `@claude` / `@codex` in Issues to discuss OKRs directly with AI
+10. **Improvement Pattern Library** — Auto-matched reusable strategies based on diagnosis (testing cold start, doc sprint, etc.)
 
 ## Three Core Principles
 
@@ -191,13 +205,24 @@ End-to-end closed-loop test on [M09Ic/aide-e2e-test](https://github.com/M09Ic/ai
 | Claude Code CLI install + execute | Pass (npm install -g) |
 | Issue auto-created ([#54](https://github.com/M09Ic/aide-e2e-test/issues/54)) | Pass |
 | AI review content valid (per-KR evidence + roast) | Pass |
+| v2 deep review (root cause + action queue + trends) | Pass |
+| PROGRESS.md auto-update PR ([#55](https://github.com/M09Ic/aide-e2e-test/pull/55)) | Pass |
+| OKR alignment check Action deployed | Pass |
 | Workflow duration | ~2 minutes |
 
-**Review output example** (from real Issue #54):
+**v2 review output example** (from real Issue #54):
 
-> KR1: Define at least 5 E2E test scenarios — Progress 0% — `tests/` directory does not exist
+> **Root Cause Analysis**
 >
-> **Roast**: How much effort did you spend on "the tool that tracks OKRs"? You built a perfect OKR dashboard that live-broadcasts "nothing accomplished." Close this file and go write your first test scenario.
+> **O1-KR1** — Type: priority. All commits over 4 days focused on OKR infrastructure, zero code advancing test scenarios. Smallest unblock: create 5 Markdown scenario files in `tests/`.
+>
+> **Action Queue**
+>
+> | # | Action | Advances KR | Effort | Why now |
+> |---|--------|-------------|--------|---------|
+> | 1 | Create tests/ + 5 scenario files | O1-KR1 | S | Critical path start |
+> | 2 | New e2e-test.yml CI | O1-KR2 | S | Unblock test chain |
+> | 3 | Expand README to 50+ lines | O2-KR1 | S | Independent P0, 30 min |
 
 ### Case 2: Bootstrap — okr-creator itself
 
@@ -211,17 +236,34 @@ OKR Creator ran `/okr` on itself, completing the full closed loop (see [Dogfoodi
 | `@claude` chat continuation + AI reply | Pass ([Issue #1 comments](https://github.com/chainreactors/okr-creator/issues/1)) |
 | Claude self-proving re-evaluation | Pass (accepted the run itself as KR completion evidence) |
 
-## GitHub Action
+## GitHub Action & Skill Interaction
 
-After `/okr-creator:okr` runs, the following files are auto-deployed to the target project:
+The core of OKR isn't just "setting goals" — it's the synergy between Skill and Action that creates a continuous improvement loop:
+
+| Component | Location | Role |
+|-----------|----------|------|
+| **SKILL.md** | `.claude/skills/okr/SKILL.md` | OKR definition + execution protocol + improvement patterns + weekly KR breakdown |
+| **PROGRESS.md** | `.claude/skills/okr/PROGRESS.md` | AI's "memory" — progress snapshot, action queue, review history |
+| **okr-review.yml** | `.github/workflows/` | Daily deep review + auto PR for progress updates |
+| **okr-chat.yml** | `.github/workflows/` | Issue @claude/@codex chat continuation |
+| **okr-review.md** | `.github/prompts/` | 5-phase review prompt (shared by Claude/Codex) |
+| **okr-align-check.yml** | `.github/workflows/` | [Optional] PR alignment check |
+
+### Deployed File Structure
 
 ```
+.claude/skills/okr/
+├── SKILL.md              # OKR + execution protocol + patterns + weekly breakdown
+└── PROGRESS.md           # Progress record (auto-maintained by Action)
+
 .github/
 ├── workflows/
-│   ├── okr-review.yml     # Daily UTC 02:00 automated review
-│   └── okr-chat.yml       # Issue comment @claude/@codex chat
+│   ├── okr-review.yml    # Daily deep review + auto PR
+│   ├── okr-chat.yml      # @claude/@codex chat
+│   └── okr-align-check.yml  # [Optional] PR alignment check
 └── prompts/
-    └── okr-review.md      # Codex review prompt
+    ├── okr-review.md     # Review prompt (Claude/Codex shared)
+    └── okr-align-check.md   # [Optional] Alignment check prompt
 ```
 
 ### Configuration (one step after deployment)
@@ -238,16 +280,21 @@ gh variable set ANTHROPIC_BASE_URL --body "https://your-proxy.com"
 gh variable set OKR_AGENT --body "codex"
 
 # Push and test
-git add .github/ && git commit -m "feat: add OKR review actions" && git push
+git add .github/ .claude/ && git commit -m "feat: add OKR review actions" && git push
 gh workflow run okr-review.yml
 ```
 
-### Daily Review
+### 5-Phase Deep Review
 
-- Runs daily at UTC 02:00 (can also be triggered manually)
-- Claude/Codex reads OKR -> runs Harness for each KR -> generates Markdown review report
-- Auto-creates quarterly Issue `[OKR Review] YYYY-QN Progress Tracking`
-- Daily appended review comments with progress, evidence, suggestions, and roast
+Daily reviews go far beyond simple progress tracking:
+
+| Phase | Content | Value |
+|-------|---------|-------|
+| Phase 1 | Load SKILL.md + PROGRESS.md | No cold start — has historical memory |
+| Phase 2 | Per-KR Harness + **root cause analysis** | Not just "0%" — tells you **why it's stuck** and the **smallest unblock action** |
+| Phase 3 | Cross-KR dependencies + Objective health | Find blocking chains, know which unlock releases the most value |
+| Phase 4 | Trend analysis + suggestion tracking | Compare with last review, auto-escalate stalled KRs, check if previous suggestions were acted on |
+| Phase 5 | Prioritized action queue + roast | Not "write more tests" but "add frontmatter check job to lint.yml, effort: S" |
 
 ### Chat Continuation
 
@@ -265,13 +312,38 @@ Maintainers comment in the OKR Review Issue to chat with AI:
 | Member / Collaborator | Can view | `@claude` / `@codex` |
 | External users | Can view | **Not triggered** |
 
-### Technical Details
+## How to Use OKR to Improve Your Project
 
-- Uses `npm install -g @anthropic-ai/claude-code` to install CLI, **no GitHub App dependency**
-- `claude -p` non-interactive mode + `--output-format text`
-- Supports `ANTHROPIC_BASE_URL` custom API endpoint (proxy-compatible)
-- Codex uses `codex exec --approval-mode full-auto`
-- Auto-creates `okr-review` label
+OKR Creator is designed not just to "set OKRs" — but to make OKRs actually drive project improvement:
+
+### 1. Generate: Let AI understand your project
+
+Run `/okr:create`. AI diagnoses, aligns with your intent, and generates OKR with execution protocol. Don't skip the intent challenge — your direction determines OKR quality.
+
+### 2. Daily dev: Let OKR guide every task
+
+The **execution protocol** in SKILL.md activates automatically when AI works in your project:
+
+- Before starting a task, AI checks "Which KR does this relate to?"
+- If P0 KRs are incomplete, AI suggests handling the bottom line first
+- After completion, AI annotates `[O1-KR1.1]` to record the contribution
+
+### 3. Daily review: Get actionable improvement advice
+
+Daily reviews tell you not just "X% complete" but:
+
+- **Why it's stuck** — root cause analysis pointing to specific files, configs, decisions
+- **Smallest unblock action** — a concrete 1-2 hour task
+- **What to do first** — prioritized action queue with effort estimates
+- **Trend warnings** — continuously stalled KRs auto-escalate
+
+### 4. Feedback loop: Suggest → Execute → Track
+
+Review suggestions persist in PROGRESS.md's action queue. Next review checks: acted on? Effect? Ignored? Escalate.
+
+### 5. PR alignment: Every commit has direction
+
+Enable optional `okr-align-check` — every PR gets a non-blocking comment with KR association, priority check, and progress estimate.
 
 ## Corporate Roast Flavor Pack
 
@@ -302,19 +374,29 @@ claude plugin marketplace add tanweai/pua
 
 ```
 chainreactors/okr-creator/
-├── skills/okr-creator/SKILL.md    # Core skill (with Action templates)
-├── commands/okr.md                # /okr-creator:okr slash command
-├── .claude/skills/okr/SKILL.md    # Bootstrap: this project's own OKR (dogfooding)
+├── skills/okr-creator/
+│   ├── SKILL.md                   # Core skill — 8-step execution flow
+│   ├── agents/                    # Specialized agent definitions
+│   │   ├── diagnostician.md       # Six-dimension diagnosis
+│   │   ├── interviewer.md         # User intent challenge
+│   │   └── reviewer.md            # OKR quality review
+│   ├── templates/                 # Deployable Action templates
+│   │   ├── okr-review.yml         # Daily deep review + auto PR
+│   │   ├── okr-chat.yml           # Issue chat continuation
+│   │   ├── okr-review.md          # Review prompt (Claude/Codex shared)
+│   │   ├── okr-align-check.yml    # [Optional] PR alignment check
+│   │   └── okr-align-prompt.md    # [Optional] Alignment check prompt
+│   ├── references/
+│   │   ├── schemas.md             # Data structure definitions
+│   │   ├── templates.md           # SKILL.md output template
+│   │   └── patterns.md            # Improvement pattern library (8 patterns)
+│   └── flavors/                   # Corporate roast flavor packs
+├── commands/create.md             # /okr:create slash command
+├── .claude/skills/okr/
+│   ├── SKILL.md                   # Bootstrap: this project's own OKR
+│   └── PROGRESS.md                # Bootstrap: progress record
 ├── .claude-plugin/                # Claude Code marketplace config
 ├── .codebuddy-plugin/             # CodeBuddy marketplace config
-├── .github/workflows/
-│   ├── okr-review.yml             # Daily OKR automated review (bootstrap)
-│   ├── okr-chat.yml               # Issue comment @claude/@codex chat
-│   ├── release.yml                # Tag-triggered auto release
-│   └── lint.yml                   # Markdown lint + frontmatter validation
-├── .github/prompts/
-│   └── okr-review.md              # Codex review prompt
-├── .markdownlint.json             # Markdown lint rules
 ├── README.md
 ├── README-en.md
 ├── LICENSE
